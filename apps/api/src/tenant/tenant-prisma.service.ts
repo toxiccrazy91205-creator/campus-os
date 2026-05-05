@@ -22,6 +22,15 @@ export class TenantPrismaService implements OnModuleDestroy {
     this.platformClient = new PrismaClient({
       datasourceUrl: process.env.DATABASE_URL,
     });
+    // Diagnostics
+    this.platformClient.school
+      .count()
+      .then((count) => {
+        this.logger.log('[DIAGNOSTIC] Schools found in DB: ' + count);
+      })
+      .catch((err) => {
+        this.logger.error('[DIAGNOSTIC] Failed to connect to DB: ' + err.message);
+      });
   }
 
   /**
