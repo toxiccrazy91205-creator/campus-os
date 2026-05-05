@@ -27,6 +27,8 @@ import Redis from 'ioredis';
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
+  private client: Redis | null = null;
+  private connected = false;
   private mockStorage = new Map<string, any>();
   private mockHashStorage = new Map<string, Map<string, any>>();
   private mockSortedSets = new Map<string, Array<{ score: number; member: string }>>();
@@ -126,8 +128,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * Score is epoch ms so ZREVRANGE returns newest-first.
    */
   async pushInAppNotification(accountId: string, payload: object): Promise<void> {
-    if (!this.connected || !this.client) return;
+    if (!this.connected) return;
     var key = 'notif:inapp:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      var set = this.mockSortedSets.get(key) || [];
+      set.push({ score: Date.now(), member: JSON.stringify(payload) });
+      set.sort((a, b) => b.score - a.score);
+      if (set.length > 100) set = set.slice(0, 100);
+      this.mockSortedSets.set(key, set);
+      return;
+    }
+    if (!this.client) return;
     try {
       await this.client.zadd(key, Date.now(), JSON.stringify(payload));
       // Keep last 100. ZREMRANGEBYRANK with negative indices trims the head.
@@ -143,8 +154,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * new message hits the topic.
    */
   async incrementUnread(accountId: string, threadId: string): Promise<void> {
-    if (!this.connected || !this.client) return;
+    if (!this.connected) return;
     var key = 'inbox:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      var hash = this.mockHashStorage.get(key) || new Map<string, any>();
+      var current = Number(hash.get(threadId)) || 0;
+      hash.set(threadId, current + 1);
+      this.mockHashStorage.set(key, hash);
+      return;
+    }
+    if (!this.client) return;
     try {
       await this.client.hincrby(key, threadId, 1);
     } catch (e: any) {
@@ -160,8 +179,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * stale until the next message arrives".
    */
   async clearUnread(accountId: string, threadId: string): Promise<void> {
-    if (!this.connected || !this.client) return;
+    if (!this.connected) return;
     var key = 'inbox:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      var hash = this.mockHashStorage.get(key);
+      if (hash) hash.delete(threadId);
+      return;
+    }
+    if (!this.client) return;
     try {
       await this.client.hdel(key, threadId);
     } catch (e: any) {
@@ -176,8 +201,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * rather than crashing.
    */
   async sumUnread(accountId: string): Promise<number> {
-    if (!this.connected || !this.client) return 0;
+    if (!this.connected) return 0;
     var key = 'inbox:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      var hash = this.mockHashStorage.get(key);
+      if (!hash) return 0;
+      var total = 0;
+      hash.forEach((val) => {
+        var n = Number(val);
+        if (Number.isFinite(n) && n > 0) total += n;
+      });
+      return total;
+    }
+    if (!this.client) return 0;
     try {
       var values = await this.client.hvals(key);
       var total = 0;
@@ -198,8 +234,19 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * Filters out zero / negative entries.
    */
   async listUnreadByThread(accountId: string): Promise<Record<string, number>> {
-    if (!this.connected || !this.client) return {};
+    if (!this.connected) return {};
     var key = 'inbox:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      var hash = this.mockHashStorage.get(key);
+      if (!hash) return {};
+      var out: Record<string, number> = {};
+      hash.forEach((val, k) => {
+        var n = Number(val);
+        if (Number.isFinite(n) && n > 0) out[k] = n;
+      });
+      return out;
+    }
+    if (!this.client) return {};
     try {
       var raw = await this.client.hgetall(key);
       var out: Record<string, number> = {};
@@ -229,8 +276,17 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     accountId: string,
     limit: number,
   ): Promise<Array<{ score: number; value: Record<string, unknown> }>> {
-    if (!this.connected || !this.client) return [];
+    if (!this.connected) return [];
     var key = 'notif:inapp:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      var set = this.mockSortedSets.get(key) || [];
+      var subset = set.slice(0, Math.max(0, limit));
+      return subset.map((item) => ({
+        score: item.score,
+        value: JSON.parse(item.member),
+      }));
+    }
+    if (!this.client) return [];
     try {
       var raw = await this.client.zrevrange(key, 0, Math.max(0, limit - 1), 'WITHSCORES');
       var out: Array<{ score: number; value: Record<string, unknown> }> = [];
@@ -259,8 +315,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * after lastReadAt). Returns 0 when Redis is unavailable.
    */
   async countInAppSince(accountId: string, sinceMs: number): Promise<number> {
-    if (!this.connected || !this.client) return 0;
+    if (!this.connected) return 0;
     var key = 'notif:inapp:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      var set = this.mockSortedSets.get(key) || [];
+      return set.filter((item) => item.score > sinceMs).length;
+    }
+    if (!this.client) return 0;
     try {
       // ZCOUNT min max — using "(sinceMs" makes the lower bound exclusive
       // so an item with score === sinceMs is treated as "already read".
@@ -277,8 +338,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * when no key exists — meaning every delivered notification is unread.
    */
   async getNotificationLastReadAt(accountId: string): Promise<number> {
-    if (!this.connected || !this.client) return 0;
+    if (!this.connected) return 0;
     var key = 'notif:lastread:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      return Number(this.mockStorage.get(key)) || 0;
+    }
+    if (!this.client) return 0;
     try {
       var raw = await this.client.get(key);
       if (!raw) return 0;
@@ -299,8 +364,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * the active-user count, which is much smaller than the queue keyspace.
    */
   async setNotificationLastReadAt(accountId: string, ms: number): Promise<void> {
-    if (!this.connected || !this.client) return;
+    if (!this.connected) return;
     var key = 'notif:lastread:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      this.mockStorage.set(key, String(ms));
+      return;
+    }
+    if (!this.client) return;
     try {
       await this.client.set(key, String(ms));
     } catch (e: any) {
@@ -315,8 +385,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * code wraps with Number() at the rendering boundary.
    */
   async getLedgerBalance(accountId: string): Promise<string | null> {
-    if (!this.connected || !this.client) return null;
+    if (!this.connected) return null;
     var key = 'ledger:balance:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      return this.mockStorage.get(key) || null;
+    }
+    if (!this.client) return null;
     try {
       return await this.client.get(key);
     } catch (e: any) {
@@ -332,8 +406,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * the balance + per-account ledger view share one round-trip.
    */
   async setLedgerBalance(accountId: string, value: string, ttlSeconds = 30): Promise<void> {
-    if (!this.connected || !this.client) return;
+    if (!this.connected) return;
     var key = 'ledger:balance:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      this.mockStorage.set(key, value);
+      return;
+    }
+    if (!this.client) return;
     try {
       await this.client.set(key, value, 'EX', ttlSeconds);
     } catch (e: any) {
@@ -348,8 +427,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * read.
    */
   async invalidateLedgerBalance(accountId: string): Promise<void> {
-    if (!this.connected || !this.client) return;
+    if (!this.connected) return;
     var key = 'ledger:balance:' + accountId;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      this.mockStorage.delete(key);
+      return;
+    }
+    if (!this.client) return;
     try {
       await this.client.del(key);
     } catch (e: any) {
