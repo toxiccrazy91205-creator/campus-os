@@ -7,7 +7,7 @@
  * - On terminal 401, invokes the registered onUnauthenticated handler.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 const TENANT_SUBDOMAIN = process.env.NEXT_PUBLIC_TENANT_SUBDOMAIN || 'demo';
 
 let _accessToken: string | null = null;
