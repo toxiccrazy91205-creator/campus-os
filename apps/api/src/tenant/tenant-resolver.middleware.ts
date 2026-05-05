@@ -106,10 +106,14 @@ export class TenantResolverMiddleware implements NestMiddleware {
     // Extract first subdomain segment
     var parts = host.split('.');
     if (parts.length >= 3) {
-      return parts[0] || null;
+      // Ignore onrender.com subdomains
+      if (host.endsWith('.onrender.com') && parts.length === 3) {
+        return 'demo';
+      }
+      return parts[0] || 'demo';
     }
 
-    return null;
+    return 'demo';
   }
 
   /**
