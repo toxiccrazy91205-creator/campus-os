@@ -26,9 +26,11 @@ import { runWithTenantContext, RequestContext, TenantInfo } from './tenant.conte
  */
 @Injectable()
 export class TenantResolverMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(TenantResolverMiddleware.name);
   constructor(private readonly prisma: PrismaClient) {}
 
   async use(req: Request, _res: Response, next: NextFunction) {
+    this.logger.log(`Incoming request: ${req.method} ${req.path}`);
     // Skip tenant resolution for health checks and auth endpoints
     if (this.isExemptPath(req.path)) {
       next();
