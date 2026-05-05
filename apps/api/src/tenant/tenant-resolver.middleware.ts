@@ -38,6 +38,7 @@ export class TenantResolverMiddleware implements NestMiddleware {
     }
 
     var subdomain = this.extractSubdomain(req);
+    this.logger.log(`Resolved subdomain: ${subdomain}`);
 
     if (!subdomain) {
       throw new HttpException(
