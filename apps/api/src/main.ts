@@ -25,8 +25,9 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: true, // Reflect the request origin
     credentials: true,
+    exposedHeaders: ['set-cookie'],
   });
 
   // Swagger
