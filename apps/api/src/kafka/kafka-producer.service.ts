@@ -71,6 +71,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
   private connected = false;
 
   async onModuleInit(): Promise<void> {
+    this.logger.log('[CONFIG] USE_MOCK_SERVICES = ' + process.env.USE_MOCK_SERVICES);
     if (process.env.USE_MOCK_SERVICES === 'true') {
       this.connected = true;
       this.logger.log('Kafka Mock Mode active (events will be logged only)');
@@ -91,13 +92,15 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     });
     this.producer = kafka.producer({ allowAutoTopicCreation: true });
     try {
+      // Test connection
       await this.producer.connect();
       this.connected = true;
       this.logger.log('Connected to Kafka brokers: ' + brokers.join(', '));
     } catch (e: any) {
       this.connected = false;
+      this.producer = null;
       this.logger.warn(
-        'Kafka unavailable; events will be skipped (best-effort mode). ' + (e?.message || e),
+        'Kafka unreachable at ' + brokers.join(', ') + '; events will be skipped (best-effort).'
       );
     }
   }

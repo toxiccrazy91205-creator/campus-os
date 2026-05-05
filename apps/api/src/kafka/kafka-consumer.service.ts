@@ -69,6 +69,12 @@ export class KafkaConsumerService implements OnModuleInit, OnApplicationShutdown
   constructor(private readonly tenantPrisma: TenantPrismaService) {}
 
   async onModuleInit(): Promise<void> {
+    this.logger.log('[CONFIG] USE_MOCK_SERVICES = ' + process.env.USE_MOCK_SERVICES);
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      this.connected = true;
+      this.logger.log('Kafka Consumer Mock Mode active (no external broker connection)');
+      return;
+    }
     var brokerList = process.env.KAFKA_BROKERS || 'localhost:9092';
     var brokers = brokerList
       .split(',')
@@ -79,11 +85,24 @@ export class KafkaConsumerService implements OnModuleInit, OnApplicationShutdown
     this.kafka = new Kafka({
       clientId: 'campusos-api-consumer',
       brokers: brokers,
-      retry: { retries: 3, initialRetryTime: 200 },
+      retry: { retries: 1, initialRetryTime: 100 },
       logLevel: 1,
     });
-    this.connected = true;
-    this.logger.log('KafkaConsumerService ready (brokers=' + brokers.join(',') + ')');
+
+    // Proactively check if brokers are reachable
+    var admin = this.kafka.admin();
+    try {
+      await admin.connect();
+      await admin.disconnect();
+      this.connected = true;
+      this.logger.log('KafkaConsumerService ready (brokers=' + brokers.join(',') + ')');
+    } catch (e: any) {
+      this.connected = false;
+      this.kafka = null;
+      this.logger.warn(
+        'Kafka brokers unreachable at ' + brokers.join(',') + '; skipping all subscriptions.'
+      );
+    }
   }
 
   async onApplicationShutdown(): Promise<void> {

@@ -250,11 +250,7 @@ async function main() {
   }
 
   // ── 7. Provision tenant schema ─────────────────────────────
-  try {
-    await provisionTenant('demo');
-  } catch (e) {
-    console.log('  Tenant schema already provisioned');
-  }
+  await provisionTenant('demo');
 
   console.log('');
   console.log('  Seed complete!');

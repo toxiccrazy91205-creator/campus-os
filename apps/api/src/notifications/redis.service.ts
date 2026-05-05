@@ -34,6 +34,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private mockSortedSets = new Map<string, Array<{ score: number; member: string }>>();
 
   async onModuleInit(): Promise<void> {
+    this.logger.log('[CONFIG] USE_MOCK_SERVICES = ' + process.env.USE_MOCK_SERVICES);
     if (process.env.USE_MOCK_SERVICES === 'true') {
       this.connected = true;
       this.logger.log('Redis Mock Mode active (in-memory storage)');

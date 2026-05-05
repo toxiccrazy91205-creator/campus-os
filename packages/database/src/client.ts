@@ -33,9 +33,16 @@ export function createTenantClient(schemaName: string): PrismaClient {
   return client;
 }
 
-export async function executePlatformSQL(sql: string): Promise<void> {
+export async function executePlatformSQL(sql: string, schemaName?: string): Promise<void> {
   var client = getPlatformClient();
-  await client.$executeRawUnsafe(sql);
+  if (schemaName) {
+    await client.$transaction([
+      client.$executeRawUnsafe('SET search_path TO "' + schemaName + '", platform, public'),
+      client.$executeRawUnsafe(sql),
+    ]);
+  } else {
+    await client.$executeRawUnsafe(sql);
+  }
 }
 
 export async function disconnectAll(): Promise<void> {

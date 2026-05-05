@@ -2,10 +2,15 @@ import { config } from 'dotenv';
 config({ path: ['../../.env.local', '../../.env', '.env'] });
 
 import { getPlatformClient, executePlatformSQL } from './client';
-import { readFileSync, readdirSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
-var TENANT_MIGRATIONS_DIR = join(__dirname, '..', 'prisma', 'tenant', 'migrations');
+var TENANT_MIGRATIONS_DIR = join(process.cwd(), 'prisma', 'tenant', 'migrations');
+if (!existsSync(TENANT_MIGRATIONS_DIR)) {
+    // Fallback for when running from root
+    TENANT_MIGRATIONS_DIR = join(process.cwd(), 'packages', 'database', 'prisma', 'tenant', 'migrations');
+}
+console.log('   Migrations directory: ' + TENANT_MIGRATIONS_DIR);
 
 export async function provisionTenant(subdomain: string): Promise<string> {
   var schemaName = 'tenant_' + subdomain.replace(/-/g, '_').toLowerCase();
@@ -19,7 +24,7 @@ export async function provisionTenant(subdomain: string): Promise<string> {
   await executePlatformSQL('CREATE SCHEMA IF NOT EXISTS "' + schemaName + '"');
   console.log('   Schema created');
 
-  await executePlatformSQL('GRANT ALL ON SCHEMA "' + schemaName + '" TO campusos');
+  await executePlatformSQL('GRANT ALL ON SCHEMA "' + schemaName + '" TO CURRENT_USER');
   console.log('   Permissions granted');
 
   await applyTenantMigrations(schemaName);
@@ -37,7 +42,8 @@ async function applyTenantMigrations(schemaName: string): Promise<void> {
         return f.endsWith('.sql');
       })
       .sort();
-  } catch (e) {
+  } catch (e: any) {
+    console.log('   Error reading migrations directory: ' + (e?.message || e));
     console.log('   No tenant migrations found');
     return;
   }
@@ -47,12 +53,11 @@ async function applyTenantMigrations(schemaName: string): Promise<void> {
     return;
   }
 
-  await executePlatformSQL('SET search_path TO "' + schemaName + '", platform, public');
-
   for (var i = 0; i < migrationFiles.length; i++) {
     var file = migrationFiles[i];
     var sql = readFileSync(join(TENANT_MIGRATIONS_DIR, file), 'utf-8');
     console.log('   Applying: ' + file);
+
     var statements = sql
       .split(';')
       .map(function (s: string) {
@@ -61,8 +66,9 @@ async function applyTenantMigrations(schemaName: string): Promise<void> {
       .filter(function (s: string) {
         return s.length > 0 && !s.startsWith('--');
       });
+
     for (var j = 0; j < statements.length; j++) {
-      await executePlatformSQL(statements[j]);
+      await executePlatformSQL(statements[j], schemaName);
     }
   }
 
