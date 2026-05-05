@@ -85,7 +85,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['com-001:read'])) {
+  if (isAdmin || hasAnyPermission(user, ['com-001:read'])) {
     apps.push({
       key: 'messages',
       label: 'Messages',
@@ -96,7 +96,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['com-002:read'])) {
+  if (isAdmin || hasAnyPermission(user, ['com-002:read'])) {
     apps.push({
       key: 'announcements',
       label: 'Announcements',
@@ -107,7 +107,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['hr-001:read'])) {
+  if (isAdmin || hasAnyPermission(user, ['hr-001:read'])) {
     apps.push({
       key: 'staff',
       label: 'Staff',
@@ -117,7 +117,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['hr-003:read'])) {
+  if (isAdmin || hasAnyPermission(user, ['hr-003:read'])) {
     apps.push({
       key: 'leave',
       label: 'Leave',
@@ -127,7 +127,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['sch-001:read'])) {
+  if (isAdmin || hasAnyPermission(user, ['sch-001:read'])) {
     apps.push({
       key: 'schedule',
       label: 'Schedule',
@@ -138,7 +138,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['sch-003:read'])) {
+  if (isAdmin || hasAnyPermission(user, ['sch-003:read'])) {
     apps.push({
       key: 'calendar',
       label: 'Calendar',
@@ -148,7 +148,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['stu-003:admin'])) {
+  if (isAdmin || hasAnyPermission(user, ['stu-003:admin'])) {
     apps.push({
       key: 'admissions',
       label: 'Admissions',
@@ -168,7 +168,7 @@ export function getAppsForUser(user: AuthUser): AppDef[] {
     });
   }
 
-  if (hasAnyPermission(user, ['fin-001:write'])) {
+  if (isAdmin || hasAnyPermission(user, ['fin-001:write'])) {
     apps.push({
       key: 'billing',
       label: 'Billing',
