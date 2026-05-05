@@ -1,10 +1,10 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { apiFetch, setAccessToken } from '@/lib/api-client';
+import { useRouter } from 'next/navigation';
+
 import { useAuthActions } from '@/lib/auth-context';
-import { useAuthStore, type AuthUser } from '@/lib/auth-store';
+import { useAuthStore } from '@/lib/auth-store';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/Toast';
 
@@ -62,10 +62,8 @@ export default function LoginPage() {
 
 function LoginPageInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { login } = useAuthActions();
   const status = useAuthStore((s) => s.status);
-  const setAuth = useAuthStore((s) => s.setAuth);
   const { toast } = useToast();
   const [busy, setBusy] = useState<string | null>(null);
 
