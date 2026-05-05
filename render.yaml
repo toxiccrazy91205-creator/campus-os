@@ -1,0 +1,30 @@
+services:
+  # ── API Backend ─────────────────────────────────────────────
+  - type: web
+    name: campus-os-api
+    runtime: node
+    plan: free
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm --filter @campusos/api start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: USE_MOCK_SERVICES
+        value: "true"
+      - key: DATABASE_URL
+        sync: false # Set this manually in Render dashboard from Neon
+      - key: CORS_ORIGIN
+        sync: false # Set this to the frontend URL after deployment
+
+  # ── Frontend Web ────────────────────────────────────────────
+  - type: web
+    name: campus-os-web
+    runtime: node
+    plan: free
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm --filter @campusos/web start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false # Set this to the API URL after deployment
