@@ -13,11 +13,11 @@ const nextConfig = {
     return [
       {
         source: '/api/v1/:path*',
-        destination: 'http://localhost:4000/api/v1/:path*',
+        destination: 'http://localhost:4001/api/v1/:path*',
       },
       {
         source: '/api/docs',
-        destination: 'http://localhost:4000/api/docs',
+        destination: 'http://localhost:4001/api/docs',
       },
     ];
   },
