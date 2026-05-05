@@ -16,7 +16,8 @@
     "db:seed": "pnpm --filter @campusos/database seed",
     "db:seed:all": "pnpm --filter @campusos/database seed && pnpm --filter @campusos/database seed:sis && pnpm --filter @campusos/database seed:hr && pnpm --filter @campusos/database seed:classroom && pnpm --filter @campusos/database seed:scheduling && pnpm --filter @campusos/database seed:messaging && pnpm --filter @campusos/database seed:enrollment && pnpm --filter @campusos/database seed:payments && pnpm --filter @campusos/database seed:profile && pnpm --filter @campusos/database seed:iam",
     "db:studio": "pnpm --filter @campusos/database studio",
-    "clean": "turbo clean && rm -rf node_modules"
+    "clean": "turbo clean && rm -rf node_modules",
+    "start": "bash start-production.sh"
   },
   "devDependencies": {
     "prettier": "^3.3.0",
