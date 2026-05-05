@@ -61,6 +61,7 @@ export class TenantPrismaService implements OnModuleDestroy {
   async executeInTenantContext<T>(fn: (client: PrismaClient) => Promise<T>): Promise<T> {
     var tenant = getCurrentTenant();
     var schemaName = tenant.schemaName;
+    this.logger.log(`Executing in tenant context: schema=${schemaName}`);
     return this.platformClient.$transaction(async function (tx: any): Promise<T> {
       await tx.$executeRawUnsafe('SET LOCAL search_path TO "' + schemaName + '", platform, public');
       return fn(tx as PrismaClient);
