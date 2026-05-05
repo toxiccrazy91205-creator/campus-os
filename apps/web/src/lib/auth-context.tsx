@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setAuth, setUnauthenticated]);
 
   const login = async (email: string) => {
-    const res = await apiFetch<{ accessToken: string }>('/api/v1/auth/dev-login', {
+    const res = await apiFetch<{ accessToken: string }>('/api/v1/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });

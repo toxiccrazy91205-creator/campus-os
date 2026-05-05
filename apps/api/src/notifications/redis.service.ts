@@ -27,10 +27,16 @@ import Redis from 'ioredis';
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
-  private client: Redis | null = null;
-  private connected = false;
+  private mockStorage = new Map<string, any>();
+  private mockHashStorage = new Map<string, Map<string, any>>();
+  private mockSortedSets = new Map<string, Array<{ score: number; member: string }>>();
 
   async onModuleInit(): Promise<void> {
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      this.connected = true;
+      this.logger.log('Redis Mock Mode active (in-memory storage)');
+      return;
+    }
     var url = process.env.REDIS_URL || 'redis://localhost:6379';
     try {
       this.client = new Redis(url, {
@@ -42,8 +48,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         },
       });
       this.client.on('error', (err) => {
-        // Suppress connection-refused chatter while the broker is still down;
-        // we already log the unavailable state once on connect failure below.
         if (this.connected) {
           this.logger.warn('Redis error: ' + (err?.message || String(err)));
         }
@@ -81,7 +85,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * `idempotency_key` is the secondary read-side dedup signal.
    */
   async claimIdempotency(key: string, ttlSeconds = 60 * 60 * 24 * 7): Promise<boolean> {
-    if (!this.connected || !this.client) return true;
+    if (!this.connected) return true;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      if (this.mockStorage.has(key)) return false;
+      this.mockStorage.set(key, '1');
+      return true;
+    }
+    if (!this.client) return true;
     try {
       var result = await this.client.set(key, '1', 'EX', ttlSeconds, 'NX');
       return result === 'OK';
@@ -97,7 +107,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
    * swallowed.
    */
   async releaseIdempotency(key: string): Promise<void> {
-    if (!this.connected || !this.client) return;
+    if (!this.connected) return;
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      this.mockStorage.delete(key);
+      return;
+    }
+    if (!this.client) return;
     try {
       await this.client.del(key);
     } catch (e: any) {

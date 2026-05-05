@@ -71,6 +71,11 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
   private connected = false;
 
   async onModuleInit(): Promise<void> {
+    if (process.env.USE_MOCK_SERVICES === 'true') {
+      this.connected = true;
+      this.logger.log('Kafka Mock Mode active (events will be logged only)');
+      return;
+    }
     var brokerList = process.env.KAFKA_BROKERS || 'localhost:9092';
     var brokers = brokerList
       .split(',')
@@ -170,6 +175,10 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
 
     try {
       var wireTopic = prefixedTopic(opts.topic);
+      if (process.env.USE_MOCK_SERVICES === 'true') {
+        this.logger.log('[mock-emit] ' + wireTopic + ' key=' + opts.key);
+        return;
+      }
       await this.producer.send({
         topic: wireTopic,
         messages: [

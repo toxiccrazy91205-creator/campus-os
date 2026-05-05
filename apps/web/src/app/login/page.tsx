@@ -40,6 +40,16 @@ const DEV_ACCOUNTS: DevAccount[] = [
     label: 'Parent (David Chen)',
     description: "Maya Chen's father",
   },
+  {
+    email: 'vp@demo.campusos.dev',
+    label: 'Vice Principal (Linda Park)',
+    description: 'School administration and compliance',
+  },
+  {
+    email: 'counsellor@demo.campusos.dev',
+    label: 'Counsellor (Marcus Hayes)',
+    description: 'Student support and guidance',
+  },
 ];
 
 export default function LoginPage() {
@@ -63,23 +73,8 @@ function LoginPageInner() {
     if (status === 'authenticated') router.replace('/dashboard');
   }, [status, router]);
 
-  // Handle OIDC callback — Keycloak redirects back with ?token=
-  useEffect(() => {
-    const token = searchParams?.get('token');
-    if (!token) return;
-    (async () => {
-      setAccessToken(token);
-      try {
-        const me = await apiFetch<AuthUser>('/api/v1/auth/me');
-        setAuth(token, me);
-        router.replace('/dashboard');
-      } catch {
-        toast('Could not load your profile. Please try again.', 'error');
-      }
-    })();
-  }, [searchParams, setAuth, router, toast]);
-
   const handleLogin = async (email: string) => {
+    if (!email) return;
     setBusy(email);
     try {
       await login(email);
@@ -101,12 +96,41 @@ function LoginPageInner() {
         </div>
 
         <div className="overflow-hidden rounded-card border border-gray-200 bg-white shadow-card">
-          <div className="border-b border-gray-100 bg-campus-50 px-5 py-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-campus-700">
-              Development Sign-in
-            </p>
-            <p className="mt-0.5 text-xs text-campus-600">
-              Bypasses Keycloak — for local testing only
+          <div className="border-b border-gray-100 bg-campus-50 px-5 py-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleLogin(formData.get('email') as string);
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label htmlFor="email" className="block text-xs font-medium uppercase tracking-wide text-campus-700">
+                  Email Address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  required
+                  className="mt-1 block w-full rounded-md border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-campus-500 focus:ring-campus-500"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={busy !== null}
+                className="w-full rounded-md bg-campus-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-campus-700 focus:outline-none focus:ring-2 focus:ring-campus-500 focus:ring-offset-2 disabled:opacity-60"
+              >
+                {busy ? <LoadingSpinner size="sm" className="mx-auto" /> : 'Sign In'}
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-gray-50 px-5 py-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+              Quick Select Accounts
             </p>
           </div>
 

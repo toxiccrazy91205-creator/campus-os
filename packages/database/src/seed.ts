@@ -81,9 +81,9 @@ async function main() {
     console.log('  Tenant routing created');
   }
 
-  // ── 4. Identity Provider (Keycloak for dev) ────────────────
+  // ── 4. Identity Provider (Local Auth) ──────────────────────
   var existingIdp = await client.identityProvider.findFirst({
-    where: { name: 'Keycloak Dev' },
+    where: { name: 'Local Identity Provider' },
   });
 
   var idpId: string;
@@ -96,15 +96,15 @@ async function main() {
       data: {
         id: idpId,
         schoolId: schoolId,
-        name: 'Keycloak Dev',
-        providerType: 'OIDC',
-        issuerUrl: 'http://localhost:8080/realms/campusos',
+        name: 'Local Identity Provider',
+        providerType: 'LOCAL',
+        issuerUrl: (process.env.API_BASE_URL || 'http://localhost:4000') + '/api/v1/auth',
         isActive: true,
         trustLevel: 'HIGH',
         autoProvisionAccounts: true,
       },
     });
-    console.log('  Identity provider "Keycloak Dev" created');
+    console.log('  Identity provider "Local Identity Provider" created');
   }
 
   // ── 5. Test Users (iam_person + platform_users) ────────────
@@ -269,7 +269,7 @@ async function main() {
   console.log('    counsellor@demo.campusos.dev (Counsellor)');
   console.log('');
   console.log('  1 family: Chen (David + Maya)');
-  console.log('  1 IdP: Keycloak Dev');
+  console.log('  1 IdP: Local Identity Provider');
 }
 
 main()

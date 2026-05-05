@@ -80,28 +80,6 @@ services:
       retries: 15
       start_period: 30s
 
-  # ── Keycloak 24 ─────────────────────────────────────────────
-  # Test IdP for OIDC/SAML auth. Pre-loaded realm with test users.
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    container_name: campusos-keycloak
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_HEALTH_ENABLED: "true"
-    volumes:
-      - ./infrastructure/keycloak/campusos-realm.json:/opt/keycloak/data/import/campusos-realm.json:ro
-    command: start-dev --import-realm
-    healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200'"]
-      interval: 10s
-      timeout: 5s
-      retries: 15
-      start_period: 30s
-
   # ── Kafka UI (optional) ─────────────────────────────────────
   # Visual topic/message browser at http://localhost:8081
   kafka-ui:

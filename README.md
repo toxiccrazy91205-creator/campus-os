@@ -30,7 +30,7 @@
 | Database       | PostgreSQL 16 (Prisma ORM)                     |
 | Cache          | Redis 7 (ioredis)                              |
 | Events         | Apache Kafka (KafkaJS)                         |
-| Auth           | External IdP via OIDC/SAML (Keycloak for dev)  |
+| Auth           | Local Authentication (direct email)            |
 | Monorepo       | pnpm + Turborepo                               |
 | Testing        | Vitest, Supertest, Pact, Playwright            |
 | CI/CD          | GitHub Actions                                 |
@@ -65,7 +65,7 @@ pnpm install
 # Copy environment variables
 cp .env.example .env.local
 
-# Start local services (PostgreSQL, Kafka, Redis, Keycloak)
+# Start local services (PostgreSQL, Kafka, Redis)
 docker compose up -d
 
 # Run database migrations
@@ -78,7 +78,6 @@ pnpm dev
 - **API:** http://localhost:4000
 - **Swagger:** http://localhost:4000/api/docs
 - **Web:** http://localhost:3000
-- **Keycloak:** http://localhost:8080
 
 ## Development Pipeline
 
