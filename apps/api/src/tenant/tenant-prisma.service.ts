@@ -16,6 +16,7 @@ import { getCurrentTenant } from './tenant.context';
  */
 @Injectable()
 export class TenantPrismaService implements OnModuleDestroy {
+  private readonly logger = new Logger(TenantPrismaService.name);
   private platformClient: PrismaClient;
 
   constructor() {
