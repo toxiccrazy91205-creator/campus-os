@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { sign, verify } from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { generateId } from '@campusos/database';
+import { EffectiveAccessCacheService } from '../iam/effective-access-cache.service';
 
 /**
  * AuthService — Token Management
@@ -29,7 +30,10 @@ export interface JwtPayload {
 export class AuthService {
   private jwtSecret: string;
 
-  constructor(private readonly prisma: PrismaClient) {
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly cacheService: EffectiveAccessCacheService,
+  ) {
     this.jwtSecret = process.env.JWT_SECRET || 'dev-secret-change-in-production-min-32-chars!!';
   }
 
@@ -117,6 +121,15 @@ export class AuthService {
         eventAt: new Date(),
       },
     });
+
+    // Pre-warm the IAM cache (ADR-043)
+    // Ensures the user has permissions immediately on their first request.
+    try {
+      await this.cacheService.rebuildAllForAccount(user.id);
+    } catch (e) {
+      // Don't block login if cache rebuild fails, but log it
+      console.error('Failed to pre-warm IAM cache for user ' + user.id, e);
+    }
 
     return { accessToken, refreshToken, user: payload };
   }

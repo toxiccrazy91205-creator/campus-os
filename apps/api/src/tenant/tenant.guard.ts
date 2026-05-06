@@ -22,7 +22,13 @@ import { getCurrentTenant } from './tenant.context';
 @Injectable()
 export class TenantGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
-    var tenant = getCurrentTenant();
+    var tenant: any;
+    try {
+      tenant = getCurrentTenant();
+    } catch (e) {
+      // No tenant context (exempt path)
+      return true;
+    }
 
     // Check frozen state for write operations
     if (tenant.isFrozen) {

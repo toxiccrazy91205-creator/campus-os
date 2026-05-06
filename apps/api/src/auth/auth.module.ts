@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { AuthController } from './auth.controller';
+import { IamModule } from '../iam/iam.module';
 
 /**
  * AuthModule
@@ -15,6 +16,7 @@ import { AuthController } from './auth.controller';
  * AppModule rather than scattered across modules so it's deterministic.
  */
 @Module({
+  imports: [IamModule],
   providers: [
     {
       provide: PrismaClient,

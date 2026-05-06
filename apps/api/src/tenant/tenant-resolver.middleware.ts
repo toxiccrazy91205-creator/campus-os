@@ -30,9 +30,8 @@ export class TenantResolverMiddleware implements NestMiddleware {
   constructor(private readonly prisma: PrismaClient) {}
 
   async use(req: Request, _res: Response, next: NextFunction) {
-    this.logger.log(`Incoming request: ${req.method} ${req.path}`);
     // Skip tenant resolution for health checks and auth endpoints
-    if (this.isExemptPath(req.path)) {
+    if (this.isExemptPath(req.path) || this.isExemptPath(req.originalUrl)) {
       next();
       return;
     }
@@ -124,15 +123,15 @@ export class TenantResolverMiddleware implements NestMiddleware {
    */
   private isExemptPath(path: string): boolean {
     var exemptPaths = [
-      '/api/v1/health',
-      '/api/v1/auth/login',
-      '/api/v1/auth/callback',
-      '/api/docs',
-      '/api/v1/guard-test/public',
+      '/health',
+      '/auth/login',
+      '/auth/callback',
+      '/docs',
+      '/guard-test/public',
     ];
 
     for (var i = 0; i < exemptPaths.length; i++) {
-      if (path.startsWith(exemptPaths[i] as string)) {
+      if (path.includes(exemptPaths[i] as string)) {
         return true;
       }
     }
