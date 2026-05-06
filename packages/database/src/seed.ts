@@ -110,12 +110,6 @@ async function main() {
   // ── 5. Test Users (iam_person + platform_users) ────────────
   var testUsers = [
     {
-      firstName: 'Platform',
-      lastName: 'Admin',
-      email: 'admin@demo.campusos.dev',
-      personType: 'STAFF' as const,
-    },
-    {
       firstName: 'Sarah',
       lastName: 'Mitchell',
       email: 'principal@demo.campusos.dev',
@@ -255,9 +249,8 @@ async function main() {
   console.log('');
   console.log('  Seed complete!');
   console.log('');
-  console.log('  7 users:');
-  console.log('    admin@demo.campusos.dev      (Platform Admin)');
-  console.log('    principal@demo.campusos.dev  (School Admin)');
+  console.log('  6 users:');
+    console.log('    principal@demo.campusos.dev  (School Admin)');
   console.log('    teacher@demo.campusos.dev    (Teacher)');
   console.log('    student@demo.campusos.dev    (Student)');
   console.log('    parent@demo.campusos.dev     (Parent)');

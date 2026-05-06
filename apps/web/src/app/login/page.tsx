@@ -16,11 +16,6 @@ interface DevAccount {
 
 const DEV_ACCOUNTS: DevAccount[] = [
   {
-    email: 'admin@demo.campusos.dev',
-    label: 'Platform Admin',
-    description: 'All 444 permissions, every tenant',
-  },
-  {
     email: 'principal@demo.campusos.dev',
     label: 'School Admin',
     description: 'Full access within Demo Charter School',

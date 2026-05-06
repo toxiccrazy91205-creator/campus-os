@@ -115,7 +115,7 @@ async function seedIam() {
   }
 
   // ── 3. Seed default roles ──────────────────────────────────
-  var roleNames = ['Platform Admin', 'School Admin', 'Teacher', 'Student', 'Parent', 'Staff'];
+  var roleNames = ['School Admin', 'Teacher', 'Student', 'Parent', 'Staff'];
   var existingRoles = await client.role.count();
   if (existingRoles > 0) {
     console.log('  Roles already seeded');
@@ -131,37 +131,6 @@ async function seedIam() {
       });
     }
     console.log('  ' + roleNames.length + ' default roles seeded');
-  }
-
-  // ── 4. Assign ALL permissions to Platform Admin (reconciling) ──────
-  // Add any newly-added codes; existing assignments stay. Removed codes
-  // were already cleared in step 1's reconciliation.
-  var adminRole = await client.role.findFirst({ where: { name: 'Platform Admin' } });
-  var allPerms = await client.permission.findMany({ select: { id: true } });
-  var adminExisting = await client.rolePermission.findMany({
-    where: { roleId: adminRole!.id },
-    select: { permissionId: true },
-  });
-  var adminAssigned: Record<string, boolean> = {};
-  for (var aei = 0; aei < adminExisting.length; aei++)
-    adminAssigned[adminExisting[aei]!.permissionId] = true;
-  var adminToAdd: Array<{ id: string; roleId: string; permissionId: string }> = [];
-  for (var ap = 0; ap < allPerms.length; ap++) {
-    if (!adminAssigned[allPerms[ap]!.id]) {
-      adminToAdd.push({ id: generateId(), roleId: adminRole!.id, permissionId: allPerms[ap]!.id });
-    }
-  }
-  if (adminToAdd.length > 0) {
-    await client.rolePermission.createMany({ data: adminToAdd });
-    console.log(
-      '  Platform Admin: ' +
-        adminToAdd.length +
-        ' permissions newly assigned (' +
-        (adminExisting.length + adminToAdd.length) +
-        ' total)',
-    );
-  } else {
-    console.log('  Platform Admin: ' + adminExisting.length + ' permissions already assigned');
   }
 
   // ── 4b. Assign baseline permissions to non-admin roles ─────
@@ -397,7 +366,6 @@ async function seedIam() {
   // (vp@, counsellor@ in Cycle 4 Step 0) doesn't require dropping the
   // existing assignments.
   var userRoleMap = [
-    { email: 'admin@demo.campusos.dev', role: 'Platform Admin', scopeId: platformScopeId },
     { email: 'principal@demo.campusos.dev', role: 'School Admin', scopeId: schoolScopeId },
     { email: 'teacher@demo.campusos.dev', role: 'Teacher', scopeId: schoolScopeId },
     { email: 'student@demo.campusos.dev', role: 'Student', scopeId: schoolScopeId },
@@ -438,7 +406,7 @@ async function seedIam() {
 
   console.log('');
   console.log('  IAM seed complete!');
-  console.log('  ' + functions.length * tiers.length + ' permissions, 6 roles, 5 assignments');
+  console.log('  ' + functions.length * tiers.length + ' permissions, 5 roles, 5 assignments');
 }
 
 // ── Export for use in main seed, or run standalone ──
